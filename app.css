@@ -15,3 +15,7 @@ button{font:inherit;border:0;border-radius:12px;padding:12px;font-weight:800;cur
 textarea,input{width:100%;border:1px solid #cfd5de;border-radius:11px;padding:11px;font:inherit}textarea{min-height:140px}label{display:block;font-weight:800;margin:12px 0 5px}.hidden{display:none!important}
 .modal{position:fixed;inset:0;background:#0009;z-index:30;display:flex;align-items:flex-end}.sheet{width:min(760px,100%);margin:0 auto;padding:16px;border-radius:22px 22px 0 0;max-height:90vh;overflow:auto}.sheet-head{display:flex;justify-content:space-between;align-items:center}.close{background:#edf0f4;padding:8px 11px}
 @media(max-width:430px){.hero{padding-left:52px;padding-right:52px}.brand-logo{width:180px;height:64px}.actions-secondary button{padding:11px 7px;font-size:12px}.actions-primary button{padding:12px 6px;font-size:13px}.stat b{font-size:20px}}
+
+.import-box{margin:12px 0}.import-main{width:100%;background:#e30613;color:#fff;border-radius:16px;padding:16px;font-size:15px;box-shadow:0 4px 14px #e3061325}.import-help{text-align:center;color:#667085;font-size:12px;margin-top:7px}
+
+.brand-logo{background:transparent!important;mix-blend-mode:normal;box-shadow:none!important;border-radius:0!important}

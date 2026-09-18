@@ -72,10 +72,11 @@ function render(){
  d.querySelector(".st").onclick=()=>states(x);d.querySelector(".w").onclick=()=>wa(x);d.querySelector(".callb").onclick=()=>location.href="tel:"+x.tel;d.querySelector(".mapsb").onclick=()=>location.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([x.address,x.cp,x.city].filter(Boolean).join(", "));d.querySelector(".edit").onclick=()=>edit(x);d.querySelector(".review").onclick=()=>preview(x);d.querySelector(".change").onclick=()=>states(x);$("results").appendChild(d)});
  let next=agenda.find(x=>x.state==="Pendiente"&&!x.issues.length&&!x.prepared);$("next").classList.toggle("hidden",!next);$("next").onclick=()=>next&&wa(next)
 }
+$("importClipboard").onclick=async()=>{try{let t=await navigator.clipboard.readText();if(!t.trim())return alert("El portapapeles está vacío.");$("raw").value=t;parseAgenda(t)}catch(e){$("manual").classList.remove("hidden");$("manualBtn").textContent="▼ Entrada manual";alert("Chrome no ha permitido leer el portapapeles automáticamente. Mantén pulsado en el cuadro, toca Pegar y después Procesar.")}};
 $("settings").onclick=settings;$("mclose").onclick=hide;$("modal").onclick=e=>{if(e.target===$("modal"))hide()};
 $("manualBtn").onclick=()=>{let h=$("manual").classList.toggle("hidden");$("manualBtn").textContent=h?"▶ Entrada manual":"▼ Entrada manual"};
 $("process").onclick=()=>parseAgenda($("raw").value);
 $("paste").onclick=async()=>{try{$("raw").value=await navigator.clipboard.readText();parseAgenda($("raw").value)}catch(e){alert("Mantén pulsado y toca Pegar.")}};
 $("newAgenda").onclick=()=>{if(confirm("¿Borrar la agenda guardada y sus estados?")){agenda=[];ignored=[];save();render()}};
 let q=new URLSearchParams(location.search),shared=q.get("text")||[q.get("title"),q.get("url")].filter(Boolean).join("\n");if(shared){$("raw").value=shared;parseAgenda(shared);history.replaceState({},"","./")}else render();
-if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js");
+
