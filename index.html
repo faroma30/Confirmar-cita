@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>Confirmar Citas</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111827;background:#f3f4f6}
+    *{box-sizing:border-box} body{margin:0}.wrap{max-width:760px;margin:auto;padding:18px}
+    h1{margin:8px 0 4px;font-size:28px}.sub{color:#6b7280;margin:0 0 18px}
+    .box,.card{background:#fff;border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 1px 5px #0001}
+    textarea{width:100%;min-height:180px;border:1px solid #d1d5db;border-radius:12px;padding:12px;font:inherit}
+    button,.btn{border:0;border-radius:12px;padding:13px 15px;font-weight:700;font-size:15px;cursor:pointer;text-decoration:none;display:inline-block}
+    .primary{background:#111827;color:white}.wa{background:#16a34a;color:white;width:100%;text-align:center}
+    .secondary{background:#e5e7eb;color:#111827}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .tag{font-size:12px;font-weight:800;background:#e5e7eb;padding:5px 8px;border-radius:999px}
+    .meta{line-height:1.55}.muted{color:#6b7280}.sent{opacity:.55}.empty{text-align:center;color:#6b7280;padding:24px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Confirmar Citas</h1>
+  <p class="sub">Procesa la agenda localmente en este dispositivo. No guarda la agenda en una base de datos.</p>
+
+  <div class="box">
+    <textarea id="raw" placeholder="Comparte el texto de Oracle con esta app o pégalo aquí…"></textarea>
+    <div class="row">
+      <button class="primary" id="process">Procesar agenda</button>
+      <button class="secondary" id="paste">Pegar</button>
+      <button class="secondary" id="clear">Limpiar</button>
+    </div>
+  </div>
+
+  <div id="summary"></div>
+  <div id="results"></div>
+</div>
+
+<script>
+const INSTALL_KEYS = ["kit hogar","kit básico","kit basico","kit negocio","kit premium"];
+
+const installationTemplate = (city,time) => `Buenas, soy Fabián, el *técnico de la alarma de Verisure* para hacer la instalación de la alarma.
+
+Mañana estaré en ${city} a las ${time}
+
+Importante que tenga el *DNI* (fisico) y el *número de cuenta*
+
+Recuerda que el inmueble debe de tener:
+- Luz
+- No estar en obras
+- Internet (si se quiere instalar la cámara de video)
+
+Te avisare cuando esté de camino, cualquier cosa házmela saber
+
+*Si necesitas CANCELAR la instalación avisame antes de las 8:00 de la mañana para evitar penalizaciones*`;
+
+const maintenanceTemplate = (city,time) => `Buenas, soy Fabián, el *técnico de la alarma de Verisure* para hacer el Mantenimiento de la alarma.
+
+Mañana estaré en ${city} a las ${time}
+
+*Si necesitas CANCELAR el mantenimiento avisame antes de las 8:00 de la mañana para evitar penalizaciones*`;
+
+function normalizePhone(s){ return (s||"").replace(/\D/g,""); }
+
+function classify(type){
+  const t=type.toLowerCase();
+  if(INSTALL_KEYS.some(k=>t.includes(k))) return "Instalación";
+  if(t.includes("mantenimiento")) return "Mantenimiento";
+  return null;
+}
+
+function titleCase(s){
+  return s.toLowerCase().replace(/(^|[\s(])-?[\p{L}]/gu, m=>m.toUpperCase());
+}
+
+function parseAgenda(text){
+  text = text.replace(/\r/g," ").replace(/\n/g," ").replace(/\s+/g," ").trim();
+  const startRe = /(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/g;
+  const starts=[...text.matchAll(startRe)];
+  const out=[];
+  for(let i=0;i<starts.length;i++){
+    const seg=text.slice(starts[i].index, i+1<starts.length ? starts[i+1].index : text.length);
+    const time=starts[i][1];
+    const typeM=seg.match(/Tipo:\s*(.*?)\s+Panel:/i);
+    const phoneM=seg.match(/Tlf:\s*([+\d][\d\s-]{7,})/i);
+    if(!typeM || !phoneM) continue;
+    const type=typeM[1].trim();
+    const kind=classify(type);
+    if(!kind) continue;
+    const phone=normalizePhone(phoneM[1]);
+    if(phone.length<9) continue;
+
+    let city="";
+    const panelPos=seg.search(/Panel:/i);
+    const cpPos=seg.search(/\sCP:/i);
+    if(panelPos>=0 && cpPos>panelPos){
+      let middle=seg.slice(panelPos,cpPos).replace(/^Panel:\s*/i,"").trim();
+      const pieces=middle.split(/\s+-\s+/);
+      if(pieces.length>=2){
+        pieces.shift(); // panel
+        // La población suele ser el primer bloque después del panel.
+        city=pieces.shift().trim();
+      }
+    }
+    if(!city) city="(revisar población)";
+    city=titleCase(city);
+    out.push({time,type,kind,phone,city});
+  }
+  return out;
+}
+
+function render(items){
+  const results=document.getElementById("results");
+  const summary=document.getElementById("summary");
+  results.innerHTML="";
+  summary.innerHTML=`<div class="box"><b>${items.length}</b> confirmación${items.length===1?"":"es"} preparada${items.length===1?"":"s"}.</div>`;
+  if(!items.length){results.innerHTML='<div class="box empty">No se encontraron instalaciones o mantenimientos con teléfono válido.</div>';return;}
+  items.forEach((x,idx)=>{
+    const msg=x.kind==="Instalación" ? installationTemplate(x.city,x.time) : maintenanceTemplate(x.city,x.time);
+    const href=`https://wa.me/34${x.phone.replace(/^34/,"")}?text=${encodeURIComponent(msg)}`;
+    const key=`sent:${x.phone}:${x.time}`;
+    const card=document.createElement("div");
+    card.className="card"+(localStorage.getItem(key)?" sent":"");
+    card.innerHTML=`<span class="tag">${x.kind}</span>
+      <div class="meta"><h2 style="margin:10px 0 4px">${x.time} · ${x.city}</h2>
+      <div>${x.type}</div><div class="muted">${x.phone}</div></div>
+      <div class="row"><a class="btn wa" href="${href}" target="_blank" rel="noopener">Abrir WhatsApp</a>
+      <button class="secondary sentBtn">${localStorage.getItem(key)?"✓ Enviado":"Marcar enviado"}</button></div>`;
+    card.querySelector(".sentBtn").onclick=()=>{
+      if(localStorage.getItem(key)){localStorage.removeItem(key);card.classList.remove("sent");card.querySelector(".sentBtn").textContent="Marcar enviado";}
+      else{localStorage.setItem(key,"1");card.classList.add("sent");card.querySelector(".sentBtn").textContent="✓ Enviado";}
+    };
+    results.appendChild(card);
+  });
+}
+
+function process(){ render(parseAgenda(document.getElementById("raw").value)); }
+document.getElementById("process").onclick=process;
+document.getElementById("clear").onclick=()=>{document.getElementById("raw").value="";document.getElementById("results").innerHTML="";document.getElementById("summary").innerHTML="";};
+document.getElementById("paste").onclick=async()=>{try{document.getElementById("raw").value=await navigator.clipboard.readText();process();}catch(e){alert("Chrome no ha permitido leer el portapapeles. Mantén pulsado en el cuadro y toca Pegar.");}};
+
+const params=new URLSearchParams(location.search);
+const shared=params.get("text") || [params.get("title"),params.get("url")].filter(Boolean).join("\n");
+if(shared){document.getElementById("raw").value=shared;process();history.replaceState({}, "", "/");}
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
+</script>
+</body></html>
