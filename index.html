@@ -1,1 +1,46 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#d71920"><title>Confirmar Citas</title><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg"><link rel="stylesheet" href="./app.css"></head><body><main class="app"><header class="head"><div class="top"><div><img class="brandlogo" src="./verisure-logo.svg" alt="Verisure"><div class="sub">Confirmar Citas · V1</div></div><button class="gear" id="settings">⚙️</button></div></header><div id="stats"></div><div id="tabs" class="tabs"></div><div id="ignored"></div><div id="results"></div><div id="manual" class="box hidden"><textarea id="raw" placeholder="Pega aquí el texto de Oracle"></textarea><div class="row"><button class="red" id="process">Procesar</button><button class="soft" id="paste">Pegar</button></div></div><div class="row"><button class="soft" id="manualBtn">Entrada manual ▾</button><button class="soft" id="newAgenda">Nueva agenda</button></div><div class="version">Confirmar Citas V1 · datos guardados solo en este dispositivo</div><button id="next" class="red next hidden">📲 CONFIRMAR SIGUIENTE PENDIENTE</button></main><div id="modal" class="modal hidden"><section class="sheet"><div class="sheethead"><h2 id="mtitle"></h2><button id="mclose" class="x">✕</button></div><div id="mbody"></div></section></div><script src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e30613">
+<title>Confirmar Citas</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+<main class="app">
+<header class="hero">
+  <div class="hero-inner">
+    <img src="./verisure-logo.jpeg" class="brand-logo" alt="Verisure">
+    <div class="app-name">Confirmar Citas V1</div>
+  </div>
+  <button class="gear" id="settings" aria-label="Ajustes">⚙️</button>
+</header>
+
+<section id="stats"></section>
+<nav id="tabs" class="tabs"></nav>
+
+<button class="manual-toggle" id="manualBtn">▶ Entrada manual</button>
+<section id="manual" class="manual-panel hidden">
+  <textarea id="raw" placeholder="Pega aquí el texto de Oracle"></textarea>
+  <div class="row"><button class="primary" id="process">Procesar</button><button class="secondary" id="paste">Pegar</button></div>
+</section>
+
+<div id="ignored"></div>
+<section id="results"></section>
+
+<div class="footer-tools"><button class="secondary" id="newAgenda">Nueva agenda</button></div>
+<div class="version">Confirmar Citas V1 · funcionamiento local</div>
+<button id="next" class="next hidden">📲 CONFIRMAR SIGUIENTE PENDIENTE</button>
+</main>
+
+<div id="modal" class="modal hidden">
+ <section class="sheet">
+   <div class="sheet-head"><h2 id="mtitle"></h2><button id="mclose" class="close">✕</button></div>
+   <div id="mbody"></div>
+ </section>
+</div>
+<script src="./app.js"></script>
+</body></html>
