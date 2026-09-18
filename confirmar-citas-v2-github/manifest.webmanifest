@@ -1,0 +1,28 @@
+{
+  "name": "Confirmar Citas",
+  "short_name": "Confirmar Citas",
+  "id": "/Confirmar-cita/",
+  "start_url": "/Confirmar-cita/",
+  "scope": "/Confirmar-cita/",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/Confirmar-cita/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "share_target": {
+    "action": "/Confirmar-cita/",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><title>Confirmar Citas</title>
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml">
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111827;background:#f3f4f6}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:760px;margin:auto;padding:16px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:27px;margin:8px 0}.iconbtn{border:0;background:#fff;border-radius:12px;padding:10px 12px;font-size:20px;box-shadow:0 1px 4px #0001}
+.box,.card,.modalbox{background:#fff;border-radius:17px;padding:15px;margin:12px 0;box-shadow:0 1px 5px #0001}
+.summary{display:flex;gap:8px;flex-wrap:wrap}.pill{padding:7px 10px;border-radius:999px;background:#e5e7eb;font-size:13px;font-weight:800}
+.ok{background:#dcfce7}.warn{background:#fef3c7}.muted{color:#6b7280}.card h2{margin:8px 0 2px;font-size:21px}.tag{font-size:12px;font-weight:800;background:#e5e7eb;padding:5px 8px;border-radius:999px}
+button,.btn{border:0;border-radius:12px;padding:13px 15px;font-weight:800;font-size:15px;cursor:pointer;text-decoration:none;display:inline-block}
+.primary{background:#111827;color:#fff}.wa{background:#16a34a;color:#fff;width:100%;text-align:center}.secondary{background:#e5e7eb}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+textarea,input{width:100%;border:1px solid #d1d5db;border-radius:11px;padding:11px;font:inherit}textarea{min-height:150px}.hidden{display:none!important}
+.sent{opacity:.55}.issue{border-left:5px solid #f59e0b}.next{position:sticky;bottom:10px;width:100%;padding:16px;font-size:17px}
+details{margin-top:10px}summary{cursor:pointer;font-weight:700}.small{font-size:13px}
+.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:flex-end;z-index:20}.modalbox{width:min(760px,100%);margin:0 auto;border-radius:20px 20px 0 0;max-height:88vh;overflow:auto}
+label{display:block;font-weight:750;margin:12px 0 5px}
+</style></head>
+<body><div class="wrap">
+<div class="top"><div><h1>Confirmar Citas</h1><div class="muted small">Las citas se procesan localmente.</div></div><button class="iconbtn" id="settings">⚙️</button></div>
+<div id="manual" class="box hidden"><textarea id="raw" placeholder="Pega aquí el texto de Oracle…"></textarea><div class="row"><button class="primary" id="process">Procesar</button><button class="secondary" id="paste">Pegar</button></div></div>
+<div id="summary"></div><div id="ignored"></div><div id="results"></div>
+<button id="next" class="primary next hidden">📲 CONFIRMAR SIGUIENTE</button>
+<div class="row"><button id="manualBtn" class="secondary">Entrada manual</button><button id="resetDay" class="secondary">Reiniciar estados</button></div>
+</div>
+<div id="modal" class="modal hidden"><div class="modalbox"><div class="top"><h2 id="modalTitle">Editar mensaje</h2><button class="iconbtn" id="closeModal">✕</button></div><div id="modalBody"></div></div></div>
+<script>
+const DEF_INSTALL=["kit hogar","kit básico","kit basico","kit negocio","kit premium"];
+const DEF_I=`Buenas, soy Fabián, el *técnico de la alarma de Verisure* para hacer la instalación de la alarma.
+
+Mañana estaré en {POBLACION} a las {HORA}
+
+Importante que tenga el *DNI* (fisico) y el *número de cuenta*
+
+Recuerda que el inmueble debe de tener:
+- Luz
+- No estar en obras
+- Internet (si se quiere instalar la cámara de video)
+
+Te avisare cuando esté de camino, cualquier cosa házmela saber
+
+*Si necesitas CANCELAR la instalación avisame antes de las 8:00 de la mañana para evitar penalizaciones*`;
+const DEF_M=`Buenas, soy Fabián, el *técnico de la alarma de Verisure* para hacer el Mantenimiento de la alarma.
+
+Mañana estaré en {POBLACION} a las {HORA}
+
+*Si necesitas CANCELAR el mantenimiento avisame antes de las 8:00 de la mañana para evitar penalizaciones*`;
+let items=[], ignored=[];
+const $=id=>document.getElementById(id);
+function cfg(){return{keys:JSON.parse(localStorage.getItem("keys")||JSON.stringify(DEF_INSTALL)),i:localStorage.getItem("tplI")||DEF_I,m:localStorage.getItem("tplM")||DEF_M}}
+function normPhone(s){return(s||"").replace(/\D/g,"")}
+function classify(t){let c=cfg(),x=t.toLowerCase();if(c.keys.some(k=>x.includes(k)))return"Instalación";if(x.includes("mantenimiento"))return"Mantenimiento";return null}
+function prettyCity(s){s=(s||"").trim();let par=[...s.matchAll(/\(([^)]+)\)/g)];if(par.length)return par.at(-1)[1].trim().toLowerCase().replace(/(^|[\s-])\p{L}/gu,m=>m.toUpperCase());return s.toLowerCase().replace(/(^|[\s-])\p{L}/gu,m=>m.toUpperCase())}
+function parse(text){
+ text=text.replace(/\r/g," ").replace(/\n/g," ").replace(/\s+/g," ").trim();let re=/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/g,st=[...text.matchAll(re)],good=[],bad=[];
+ for(let i=0;i<st.length;i++){let seg=text.slice(st[i].index,i+1<st.length?st[i+1].index:text.length),time=st[i][1],tm=seg.match(/Tipo:\s*(.*?)\s+Panel:/i),pm=seg.match(/Tlf:\s*([+\d][\d\s-]{7,})/i),type=tm?tm[1].trim():"",kind=tm?classify(type):null,phone=pm?normPhone(pm[1]):"";
+  let city="",a=seg.search(/Panel:/i),b=seg.search(/\sCP:/i);if(a>=0&&b>a){let pcs=seg.slice(a,b).replace(/^Panel:\s*/i,"").trim().split(/\s+-\s+/);if(pcs.length>=2){pcs.shift();city=pcs.shift().trim()}}
+  city=prettyCity(city);let issues=[];if(kind&&phone.length<9)issues.push("Teléfono no válido");if(kind&&!city)issues.push("Población no detectada");
+  let obj={time,type,kind,phone,city,issues,seg};if(kind)good.push(obj);else bad.push({time,type:type||"Sin tipo"});
+ }items=good;ignored=bad;render();
+}
+function msg(x){let c=cfg(),t=x.kind==="Instalación"?c.i:c.m;return t.replaceAll("{POBLACION}",x.city||"(revisar población)").replaceAll("{HORA}",x.time)}
+function key(x){return"sent:"+x.phone+":"+x.time}
+function openWA(x,custom){if(x.issues.length){alert("Revisa esta cita antes de abrir WhatsApp: "+x.issues.join(", "));return}localStorage.setItem(key(x),"1");render();location.href=`https://wa.me/34${x.phone.replace(/^34/,"")}?text=${encodeURIComponent(custom||msg(x))}`}
+function render(){
+ $("summary").innerHTML=`<div class="box"><div class="summary"><span class="pill ok">${items.length} confirmaciones</span><span class="pill">${items.filter(x=>localStorage.getItem(key(x))).length} preparadas</span><span class="pill warn">${ignored.length} ignoradas</span></div></div>`;
+ $("ignored").innerHTML=ignored.length?`<div class="box"><details><summary>${ignored.length} citas ignoradas</summary>${ignored.map(x=>`<div class="small muted" style="margin-top:8px">${x.time} · ${x.type}</div>`).join("")}</details></div>`:"";
+ $("results").innerHTML="";
+ items.forEach((x,n)=>{let sent=localStorage.getItem(key(x)),d=document.createElement("div");d.className="card "+(sent?"sent ":"")+(x.issues.length?"issue":"");d.innerHTML=`<span class="tag">${x.kind}</span><h2>${x.time} · ${x.city||"⚠️ Revisar población"}</h2><div>${x.type}</div><div class="muted">${x.phone||"Sin teléfono"}</div>${x.issues.map(v=>`<div class="pill warn" style="margin-top:8px">⚠️ ${v}</div>`).join("")}<div class="row"><button class="wa send">Enviar WhatsApp</button><button class="secondary edit">Revisar mensaje</button><button class="secondary mark">${sent?"✓ Preparada":"Marcar preparada"}</button></div>`;d.querySelector(".send").onclick=()=>openWA(x);d.querySelector(".edit").onclick=()=>editMsg(x);d.querySelector(".mark").onclick=()=>{sent?localStorage.removeItem(key(x)):localStorage.setItem(key(x),"1");render()};$("results").appendChild(d)});
+ let nxt=items.find(x=>!localStorage.getItem(key(x))&&!x.issues.length);$("next").classList.toggle("hidden",!nxt);$("next").onclick=()=>nxt&&openWA(nxt);
+}
+function editMsg(x){$("modalTitle").textContent=x.time+" · "+(x.city||"Revisar");$("modalBody").innerHTML=`<textarea id="customMsg" style="min-height:300px">${msg(x)}</textarea><div class="row"><button class="wa" id="sendCustom">Abrir WhatsApp</button></div>`;$("modal").classList.remove("hidden");$("sendCustom").onclick=()=>openWA(x,$("customMsg").value)}
+function settings(){
+ let c=cfg();$("modalTitle").textContent="Ajustes";$("modalBody").innerHTML=`<label>Palabras de instalación (una por línea)</label><textarea id="keys">${c.keys.join("\n")}</textarea><label>Plantilla instalación</label><textarea id="tplI">${c.i}</textarea><label>Plantilla mantenimiento</label><textarea id="tplM">${c.m}</textarea><div class="row"><button class="primary" id="saveCfg">Guardar</button><button class="secondary" id="defaults">Restaurar</button></div>`;$("modal").classList.remove("hidden");
+ $("saveCfg").onclick=()=>{localStorage.setItem("keys",JSON.stringify($("keys").value.split("\n").map(x=>x.trim().toLowerCase()).filter(Boolean)));localStorage.setItem("tplI",$("tplI").value);localStorage.setItem("tplM",$("tplM").value);$("modal").classList.add("hidden");alert("Ajustes guardados")};
+ $("defaults").onclick=()=>{["keys","tplI","tplM"].forEach(k=>localStorage.removeItem(k));$("modal").classList.add("hidden");alert("Plantillas restauradas")};
+}
+$("settings").onclick=settings;$("closeModal").onclick=()=>$("modal").classList.add("hidden");$("modal").onclick=e=>{if(e.target===$("modal"))$("modal").classList.add("hidden")};
+$("manualBtn").onclick=()=>$("manual").classList.toggle("hidden");$("process").onclick=()=>parse($("raw").value);$("paste").onclick=async()=>{try{$("raw").value=await navigator.clipboard.readText();parse($("raw").value)}catch(e){alert("Mantén pulsado en el cuadro y toca Pegar.")}};
+$("resetDay").onclick=()=>{items.forEach(x=>localStorage.removeItem(key(x)));render()};
+let q=new URLSearchParams(location.search),shared=q.get("text")||[q.get("title"),q.get("url")].filter(Boolean).join("\n");if(shared){$("raw").value=shared;parse(shared);history.replaceState({},"","./")}else{$("manual").classList.remove("hidden");render()}
+if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js");
+</script></body></html>
