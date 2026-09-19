@@ -45,6 +45,15 @@ let agenda=JSON.parse(localStorage.getItem("v1agenda")||"[]"),ignored=JSON.parse
 const save=()=>{localStorage.setItem("v1agenda",JSON.stringify(agenda));localStorage.setItem("v1ignored",JSON.stringify(ignored))}
 const norm=s=>(s||"").replace(/\D/g,"");
 function classify(t){let q=(t||"").toLowerCase(),c=cfg();if(c.keys.some(k=>q.includes(k)))return"Instalación";if(q.includes("mantenimiento"))return"Mantenimiento";return null}
+
+function mapAddress(address,city){
+ let parts=(address||"").trim().split(/\s+/), out=[];
+ for(let part of parts){
+   out.push(part);
+   if(/^\d+[A-Za-z]?$/.test(part)) break;
+ }
+ return [out.join(" "),city].filter(Boolean).join(", ");
+}
 function cleanAddress(s){
  return (s||"").replace(/\b0+(\d+)\b/g,(m,n)=>String(parseInt(n,10))).replace(/\s+/g," ").trim();
 }
@@ -72,7 +81,7 @@ function render(){
  $("results").innerHTML="";
  list.forEach(x=>{let d=document.createElement("article"),sc=x.state==="Pendiente"?"pending":x.state==="Confirmada"?"confirmed":"cancelled";d.className="card "+(x.issues.length?"issue ":"")+(x.prepared?"prepared":"");
  d.innerHTML=`<div class="card-top"><span class="tag">${x.kind}</span><button class="state ${sc} st">${x.state}</button></div><h2>${x.time} · ${x.city||"Revisar población"}</h2><div class="type">${x.type}</div><div class="meta">Prospecto: ${x.mto||"—"} · ${x.tel||"Sin teléfono"}</div><div class="address">📍 ${x.address||"Dirección no detectada"} ${x.cp||""}</div>${x.prepared?'<div class="badge">✓ WhatsApp preparado</div>':""}${x.issues.map(i=>`<div class="badge">⚠️ ${i}</div>`).join("")}<div class="actions-primary"><button class="whatsapp w">WhatsApp</button><button class="call callb">📞 Llamar</button><button class="maps mapsb">📍 Maps</button></div><div class="actions-secondary"><button class="secondary edit">✎ Editar</button><button class="review">💬 Revisar mensaje</button><button class="change">↻ Cambiar estado</button></div>`;
- d.querySelector(".st").onclick=()=>states(x);d.querySelector(".w").onclick=()=>wa(x);d.querySelector(".callb").onclick=()=>location.href="tel:"+x.tel;d.querySelector(".mapsb").onclick=()=>location.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([x.address,x.cp,x.city].filter(Boolean).join(", "));d.querySelector(".edit").onclick=()=>edit(x);d.querySelector(".review").onclick=()=>preview(x);d.querySelector(".change").onclick=()=>states(x);$("results").appendChild(d)});
+ d.querySelector(".st").onclick=()=>states(x);d.querySelector(".w").onclick=()=>wa(x);d.querySelector(".callb").onclick=()=>location.href="tel:"+x.tel;d.querySelector(".mapsb").onclick=()=>location.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(mapAddress(x.address,x.city));d.querySelector(".edit").onclick=()=>edit(x);d.querySelector(".review").onclick=()=>preview(x);d.querySelector(".change").onclick=()=>states(x);$("results").appendChild(d)});
  let next=agenda.find(x=>x.state==="Pendiente"&&!x.issues.length&&!x.prepared);$("next").classList.toggle("hidden",!next);$("next").onclick=()=>next&&wa(next)
 }
 $("importClipboard").onclick=async()=>{try{let t=await navigator.clipboard.readText();if(!t.trim())return alert("El portapapeles está vacío.");$("raw").value=t;parseAgenda(t)}catch(e){$("manual").classList.remove("hidden");$("manualBtn").textContent="▼ Entrada manual";alert("Chrome no ha permitido leer el portapapeles automáticamente. Mantén pulsado en el cuadro, toca Pegar y después Procesar.")}};
