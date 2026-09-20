@@ -92,11 +92,26 @@ function settings(){let c=cfg();show("Ajustes",`<label>Nombre del técnico</labe
 $("rInst").onclick=()=>{$("inst").value=DEF_I};$("rMaint").onclick=()=>{$("maint").value=DEF_M};$("rMail").onclick=()=>{$("mail").value=DEF_MAIL};
 $("saveCfg").onclick=()=>{localStorage.setItem("v1tech",$("tech").value.trim());localStorage.setItem("v1keys",JSON.stringify($("keys").value.split("\n").map(v=>v.trim().toLowerCase()).filter(Boolean)));localStorage.setItem("v1inst",$("inst").value);localStorage.setItem("v1maint",$("maint").value);localStorage.setItem("v1to",$("to").value.trim());localStorage.setItem("v1cc",$("cc").value.trim());localStorage.setItem("v1subject",$("subject").value);localStorage.setItem("v1mail",$("mail").value);hide();alert("Ajustes guardados")}}
 function contactLabel(x){return x.contactedAt?"✓ Contactado "+new Date(x.contactedAt).toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}):""}
+function shortDate(d){return new Date(d+"T12:00:00").toLocaleDateString("es-ES",{day:"2-digit",month:"short"}).replace(".","").toUpperCase()}
+function savedDateNav(){
+ let ds=Object.keys(stores).sort();
+ if(!ds.includes(activeDate))ds.push(activeDate);
+ ds=[...new Set(ds)].sort();
+ return `<div class="datechips">${ds.map(d=>`<button class="secondary datechip ${d===activeDate?"on":""}" data-d="${d}">${shortDate(d)}</button>`).join("")}<button class="secondary datechip addDate">＋</button></div><div class="daytitle">${fmtDate(activeDate)}</div>`;
+}
 function showHistory(){let ds=Object.keys(stores).sort().reverse();show("Agendas guardadas",ds.length?`<div style="display:grid;gap:8px">${ds.map(d=>`<button class="secondary hist" data-d="${d}">${fmtDate(d)} · ${(stores[d].agenda||[]).length} citas</button>`).join("")}</div>`:"No hay agendas guardadas.");document.querySelectorAll(".hist").forEach(b=>b.onclick=()=>{hide();switchDate(b.dataset.d)})}
+function chooseNewDate(){
+ let existing=document.getElementById("datePickerOverlay");if(existing)existing.remove();
+ let wrap=document.createElement("div");wrap.id="datePickerOverlay";wrap.className="modal";
+ wrap.innerHTML=`<section class="sheet"><div class="sheet-head"><h2>Nueva agenda</h2><button class="close dpClose">✕</button></div><label>Selecciona la fecha</label><input id="nativeDatePicker" type="date" min="${TODAY()}" value="${activeDate||TOMORROW()}"><button class="primary createDate" style="width:100%;margin-top:12px">Abrir esta fecha</button></section>`;
+ document.body.appendChild(wrap);
+ wrap.querySelector(".dpClose").onclick=()=>wrap.remove();
+ wrap.querySelector(".createDate").onclick=()=>{let d=wrap.querySelector("#nativeDatePicker").value;if(!d)return;wrap.remove();switchDate(d);save();render()};
+}
 function render(){
  let n=s=>agenda.filter(x=>x.state===s).length;
- $("stats").innerHTML=`<div class="daynav"><button class="secondary day" data-d="${TODAY()}">Hoy</button><button class="secondary day" data-d="${TOMORROW()}">Mañana</button><button class="secondary" id="historyBtn">Anteriores</button></div><div class="daytitle">${fmtDate(activeDate)}</div><div class="stats"><div class="stat"><b>${agenda.length}</b><span>Citas</span></div><div class="stat"><b>${n("Pendiente")}</b><span>Pendientes</span></div><div class="stat"><b>${n("Confirmada")}</b><span>Confirmadas</span></div><div class="stat"><b>${n("Cancelada")}</b><span>Canceladas</span></div></div>`;
- document.querySelectorAll(".day").forEach(b=>{if(b.dataset.d===activeDate)b.classList.add("on");b.onclick=()=>switchDate(b.dataset.d)});let hb=$("historyBtn");if(hb)hb.onclick=showHistory;
+ $("stats").innerHTML=savedDateNav()+`<div class="stats"><div class="stat"><b>${agenda.length}</b><span>Citas</span></div><div class="stat"><b>${n("Pendiente")}</b><span>Pendientes</span></div><div class="stat"><b>${n("Confirmada")}</b><span>Confirmadas</span></div><div class="stat"><b>${n("Cancelada")}</b><span>Canceladas</span></div></div>`;
+ document.querySelectorAll(".datechip[data-d]").forEach(b=>b.onclick=()=>switchDate(b.dataset.d));let add=document.querySelector(".addDate");if(add)add.onclick=chooseNewDate;
 let active=agenda.filter(x=>!x.missing),done=active.length>0&&active.every(x=>x.state!=="Pendiente");
 let notices=(done?`<div class="ready">✓ Agenda preparada · no quedan citas pendientes</div>`:"")+(importChanges.length?`<div class="changes"><b>⚠ Cambios detectados</b>${importChanges.map(x=>`<div>${x}</div>`).join("")}</div>`:"");
 let fs=["Todas","Pendientes","Confirmadas","Canceladas","Ignoradas"];$("tabs").innerHTML=fs.map(f=>`<button class="tab ${filter===f?"on":""}" data-f="${f}">${f}</button>`).join("");document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{filter=b.dataset.f;render()});
@@ -113,6 +128,6 @@ $("settings").onclick=settings;$("mclose").onclick=hide;$("modal").onclick=e=>{i
 $("manualBtn").onclick=()=>{let h=$("manual").classList.toggle("hidden");$("manualBtn").textContent=h?"▶ Entrada manual":"▼ Entrada manual"};
 $("process").onclick=()=>parseAgenda($("raw").value);
 $("paste").onclick=async()=>{try{$("raw").value=await navigator.clipboard.readText();parseAgenda($("raw").value)}catch(e){alert("Mantén pulsado y toca Pegar.")}};
-$("newAgenda").onclick=()=>{let d=prompt("Fecha de la nueva agenda (AAAA-MM-DD):",TOMORROW());if(!d)return;switchDate(d);agenda=[];ignored=[];importChanges=[];save();render()};
+$("newAgenda").onclick=chooseNewDate;
 let q=new URLSearchParams(location.search),shared=q.get("text")||[q.get("title"),q.get("url")].filter(Boolean).join("\n");if(shared){$("raw").value=shared;parseAgenda(shared);history.replaceState({},"","./")}else render();
 
