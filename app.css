@@ -19,3 +19,5 @@ textarea,input{width:100%;border:1px solid #cfd5de;border-radius:11px;padding:11
 .import-box{margin:12px 0}.import-main{width:100%;background:#e30613;color:#fff;border-radius:16px;padding:16px;font-size:15px;box-shadow:0 4px 14px #e3061325}.import-help{text-align:center;color:#667085;font-size:12px;margin-top:7px}
 
 .brand-logo{background:transparent!important;mix-blend-mode:normal;box-shadow:none!important;border-radius:0!important}
+
+.daynav{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0 4px}.day.on{background:#e30613;color:#fff}.daytitle{text-align:center;font-weight:900;text-transform:capitalize;margin:7px 0 4px}.ready{background:#dff7e8;color:#126a3c;border-radius:14px;padding:12px;margin:10px 0;font-weight:900}.changes{background:#fff0c9;color:#654900;border-radius:14px;padding:12px;margin:10px 0}.changes div{font-size:12px;margin-top:5px}.badge.missing{background:#ffe1e3;color:#a50000}.badge.changed{background:#fff0c9;color:#765300}
