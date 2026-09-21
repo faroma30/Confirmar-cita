@@ -17,7 +17,7 @@ Recuerda que el inmueble debe tener:
 
 Te avisaré cuando esté de camino. Cualquier cosa, házmela saber.
 
-*Si necesitas CANCELAR la instalación avísame antes de las 8:00 de la mañana para evitar penalizaciones.*`;
+*Si necesitas CANCELAR la instalación avísame antes de las 00:00 de hoy para evitar penalizaciones.*`;
 const DEF_M=`Buenas, soy {TECNICO}, el *técnico de la alarma de Verisure* para hacer el mantenimiento de la alarma.
 
 Mañana estaré en *{POBLACION}* a las *{HORA}*.
@@ -26,7 +26,7 @@ Mañana estaré en *{POBLACION}* a las *{HORA}*.
 
 Por favor, comprueba que la dirección es correcta.
 
-*Si necesitas CANCELAR el mantenimiento avísame antes de las 8:00 de la mañana para evitar penalizaciones.*`;
+*Si necesitas CANCELAR el mantenimiento avísame antes de las 00:00 de hoy para evitar penalizaciones.*`;
 const DEF_MAIL=`Buenos días,
 
 El cliente correspondiente al prospecto {MTO} solicita cancelar la cita prevista a las {HORA}.
@@ -142,7 +142,7 @@ function savedDateNav(){
  let ds=Object.keys(stores).sort();
  if(!ds.includes(activeDate))ds.push(activeDate);
  ds=[...new Set(ds)].sort();
- return `<div class="datechips">${ds.map(d=>`<button class="secondary datechip ${d===activeDate?"on":""}" data-d="${d}">${shortDate(d)}</button>`).join("")}<button class="secondary datechip addDate">＋</button></div><div class="daytitle">${fmtDate(activeDate)}</div>`;
+ return `<div class="datechips">${ds.map(d=>`<button class="secondary datechip ${d===activeDate?"on":""}" data-d="${d}">${shortDate(d)}</button>`).join("")}<button class="secondary datechip addDate">＋</button></div><div class="daytitle"><span>${fmtDate(activeDate)}</span><button class="deleteDay">🗑️ Borrar día</button></div>`;
 }
 function showHistory(){let ds=Object.keys(stores).sort().reverse();show("Agendas guardadas",ds.length?`<div style="display:grid;gap:8px">${ds.map(d=>`<button class="secondary hist" data-d="${d}">${fmtDate(d)} · ${(stores[d].agenda||[]).length} citas</button>`).join("")}</div>`:"No hay agendas guardadas.");document.querySelectorAll(".hist").forEach(b=>b.onclick=()=>{hide();switchDate(b.dataset.d)})}
 function chooseNewDate(){
@@ -157,7 +157,7 @@ function render(){
  let n=s=>agenda.filter(x=>x.state===s).length;
  sortAgenda();let visibleAgenda=agenda.filter(x=>!x.missing),contacted=visibleAgenda.filter(x=>x.contactedAt).length;
 $("stats").innerHTML=savedDateNav()+`<div class="stats stats5"><div class="stat"><b>${visibleAgenda.length}</b><span>Citas</span></div><div class="stat"><b>${contacted}</b><span>Contactadas</span></div><div class="stat"><b>${n("Pendiente")}</b><span>Pendientes</span></div><div class="stat"><b>${n("Confirmada")}</b><span>Confirmadas</span></div><div class="stat"><b>${n("Cancelada")}</b><span>Canceladas</span></div></div>`;
- document.querySelectorAll(".datechip[data-d]").forEach(b=>b.onclick=()=>switchDate(b.dataset.d));let add=document.querySelector(".addDate");if(add)add.onclick=chooseNewDate;
+ document.querySelectorAll(".datechip[data-d]").forEach(b=>b.onclick=()=>switchDate(b.dataset.d));let add=document.querySelector(".addDate");if(add)add.onclick=chooseNewDate;let del=document.querySelector(".deleteDay");if(del)del.onclick=()=>{if(!confirm(`¿Borrar todo el historial de ${fmtDate(activeDate)}?\n\nSe eliminarán citas, estados, teléfonos, direcciones, notas y motivos de cancelación de ese día.`))return;delete stores[activeDate];agenda=[];ignored=[];importChanges=[];localStorage.setItem("v1datedAgendas",JSON.stringify(stores));render()};
 let active=agenda.filter(x=>!x.missing),done=active.length>0&&active.every(x=>x.state!=="Pendiente");
 let notices=(done?`<div class="ready">✓ Agenda preparada · no quedan citas pendientes</div>`:"")+(importChanges.length?`<div class="changes"><b>⚠ Cambios detectados</b>${importChanges.map(x=>`<div>${x}</div>`).join("")}</div>`:"");
 let fs=["Todas","Pendientes","Confirmadas","Canceladas","Ignoradas"];$("tabs").innerHTML=fs.map(f=>`<button class="tab ${filter===f?"on":""}" data-f="${f}">${f}</button>`).join("");document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{filter=b.dataset.f;render()});
