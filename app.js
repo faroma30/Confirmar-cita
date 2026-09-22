@@ -40,6 +40,8 @@ Motivo indicado por el cliente: {MOTIVO}
 
 Un saludo,
 {TECNICO}`;
+function migrateTemplatesToMidnight(){["tplI","tplM"].forEach(k=>{let v=localStorage.getItem(k);if(!v)return;let nv=v.replace(/antes de las 0?8:00 de la mañana para evitar penalizaciones/gi,"antes de las 00:00 de hoy para evitar penalizaciones");if(nv!==v)localStorage.setItem(k,nv)})}
+migrateTemplatesToMidnight();
 function cfg(){return{tech:localStorage.getItem("v1tech")||"",keys:JSON.parse(localStorage.getItem("v1keys")||JSON.stringify(DEF_KEYS)),inst:localStorage.getItem("v1inst")||DEF_I,maint:localStorage.getItem("v1maint")||DEF_M,to:localStorage.getItem("v1to")||"toa.alianzas@verisure.es",cc:localStorage.getItem("v1cc")||"angel.garciaestevez@verisure.es",subject:localStorage.getItem("v1subject")||"Cliente cancela - Prospecto {MTO}",mail:localStorage.getItem("v1mail")||DEF_MAIL}}
 const TODAY=()=>new Date().toISOString().slice(0,10);
 const TOMORROW=()=>{let d=new Date();d.setDate(d.getDate()+1);return d.toISOString().slice(0,10)};
@@ -51,7 +53,7 @@ function save(){stores[activeDate]={agenda,ignored,updatedAt:Date.now()};localSt
 function switchDate(d){save();activeDate=d;agenda=stores[d]?.agenda||[];ignored=stores[d]?.ignored||[];importChanges=[];render()}
 function fmtDate(d){return new Date(d+"T12:00:00").toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"})}
 const norm=s=>(s||"").replace(/\D/g,"");
-function classify(t){let q=(t||"").toLowerCase(),c=cfg();if(c.keys.some(k=>q.includes(k)))return"Instalación";if(q.includes("mantenimiento"))return"Mantenimiento";return null}
+function classify(t){let q=(t||"").toLowerCase(),c=cfg();if(c.keys.some(k=>q.includes(k)))return"Instalación";if(q.includes("mantenimiento")||q.includes("avería")||q.includes("averia"))return"Mantenimiento";return null}
 
 function mapAddress(address,city){
  let parts=(address||"").trim().split(/\s+/), out=[];
