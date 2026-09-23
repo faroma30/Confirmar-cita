@@ -138,6 +138,7 @@ function purgeOldData(force=false){
  localStorage.setItem("v1datedAgendas",JSON.stringify(stores));
  return removed;
 }
+function ensureTomorrowVisible(){let d=TOMORROW();if(!stores[d])stores[d]={agenda:[],ignored:[],auto:true};localStorage.setItem("v1datedAgendas",JSON.stringify(stores))}
 function contactLabel(x){return x.contactedAt?"✓ Contactado "+new Date(x.contactedAt).toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}):""}
 function shortDate(d){return new Date(d+"T12:00:00").toLocaleDateString("es-ES",{day:"2-digit",month:"short"}).replace(".","").toUpperCase()}
 function savedDateNav(){
@@ -177,5 +178,5 @@ $("manualBtn").onclick=()=>{let h=$("manual").classList.toggle("hidden");$("manu
 $("process").onclick=()=>parseAgenda($("raw").value);
 $("paste").onclick=async()=>{try{$("raw").value=await navigator.clipboard.readText();parseAgenda($("raw").value)}catch(e){alert("Mantén pulsado y toca Pegar.")}};
 $("newAgenda").onclick=chooseNewDate;
-purgeOldData(false);let q=new URLSearchParams(location.search),shared=q.get("text")||[q.get("title"),q.get("url")].filter(Boolean).join("\n");if(shared){$("raw").value=shared;parseAgenda(shared);history.replaceState({},"","./")}else render();
+purgeOldData(false);ensureTomorrowVisible();let q=new URLSearchParams(location.search),shared=q.get("text")||[q.get("title"),q.get("url")].filter(Boolean).join("\n");if(shared){$("raw").value=shared;parseAgenda(shared);history.replaceState({},"","./")}else render();
 
